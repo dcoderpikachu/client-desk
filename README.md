@@ -33,4 +33,4 @@ npm run dev
 ```
 
 The Supabase URL and publishable key have safe public defaults in `src/lib/env.ts`; override with
-`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. `ALLOWED_EMAIL` sets who can sign in.
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. `ALLOWED_EMAIL` sets who can sign in (comma-separated for more than one); add the same address to `public.owners`.

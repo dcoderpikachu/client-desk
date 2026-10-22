@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ALLOWED_EMAIL } from "@/lib/env";
+import { isAllowed } from "@/lib/env";
 import { addDays, todayISO } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,7 +37,7 @@ function withParam(path: string, key: string, value: string): string {
 async function db() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  if (!data.user || (data.user.email ?? "").toLowerCase() !== ALLOWED_EMAIL) redirect("/login");
+  if (!data.user || !isAllowed(data.user.email)) redirect("/login");
   return supabase;
 }
 
@@ -57,7 +57,7 @@ function fail(path: string, message: string): never {
 export async function signIn(fd: FormData) {
   const email = str(fd, "email").toLowerCase();
   if (!email) redirect("/login?error=" + encodeURIComponent("Enter your email."));
-  if (email !== ALLOWED_EMAIL) redirect("/login?error=" + encodeURIComponent("This desk is private. That email can't sign in."));
+  if (!isAllowed(email)) redirect("/login?error=" + encodeURIComponent("This desk is private. That email can't sign in."));
 
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");

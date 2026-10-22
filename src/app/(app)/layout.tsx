@@ -4,14 +4,14 @@ import { signOut } from "@/app/actions";
 import { IconPhone, IconPlus } from "@/components/Icons";
 import { NavLinks } from "@/components/NavLinks";
 import { todayISO } from "@/lib/dates";
-import { AGENCY_NAME, ALLOWED_EMAIL, OWNER_NAME, OWNER_SHORT } from "@/lib/env";
+import { AGENCY_NAME, OWNER_NAME, OWNER_SHORT, isAllowed } from "@/lib/env";
 import { getData, getSession } from "@/lib/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = await getSession();
   if (!user) redirect("/login");
 
-  if ((user.email ?? "").toLowerCase() !== ALLOWED_EMAIL) {
+  if (!isAllowed(user.email)) {
     return (
       <main className="auth-wrap">
         <div className="card auth-card">

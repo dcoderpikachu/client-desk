@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 import { NextResponse, type NextRequest } from "next/server";
-import { ALLOWED_EMAIL } from "@/lib/env";
+import { isAllowed } from "@/lib/env";
 import { todayISO } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ table: str
 
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user || (auth.user.email ?? "").toLowerCase() !== ALLOWED_EMAIL) {
+  if (!auth.user || !isAllowed(auth.user.email)) {
     return new NextResponse("Sign in first", { status: 401 });
   }
 

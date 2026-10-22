@@ -4,14 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { findColumn, parseAmount, parseCsv, parseDate } from "@/lib/csv";
 import { addDays } from "@/lib/dates";
-import { ALLOWED_EMAIL } from "@/lib/env";
+import { isAllowed } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { parseUpwork, teamsOf, type UpRow } from "@/lib/upwork";
 
 async function db() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  if (!data.user || (data.user.email ?? "").toLowerCase() !== ALLOWED_EMAIL) redirect("/login");
+  if (!data.user || !isAllowed(data.user.email)) redirect("/login");
   return supabase;
 }
 
