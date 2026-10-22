@@ -77,12 +77,42 @@ export async function loadData(supabase: SupabaseClient): Promise<Data> {
     supabase.from("settings").select("key, value"),
   ]);
 
-  const thresholdsRow = (settings.data ?? []).find((s: { key: string }) => s.key === "thresholds") as
-    | { value: Partial<Thresholds> }
-    | undefined;
+  return normalize({
+    clients, brands, contacts, engagements, touchpoints, action_items: actionItems, notes, health_ratings: ratings,
+    invoices, payouts, upwork_earnings: earnings, upwork_charges: charges, fx_rates: fxRows, settings: settings.data ?? [],
+  });
+}
+
+export type RawData = {
+  clients: Client[];
+  brands: Brand[];
+  contacts: Contact[];
+  engagements: Engagement[];
+  touchpoints: Touchpoint[];
+  action_items: ActionItem[];
+  notes: Note[];
+  health_ratings: Rating[];
+  invoices: Invoice[];
+  payouts: Payout[];
+  upwork_earnings: Earning[];
+  upwork_charges: Charge[];
+  fx_rates: FxRow[];
+  settings: { key: string; value: unknown }[];
+};
+
+/** Numbers come back from PostgREST as strings for numeric columns; coerce them once here. */
+export function normalize(raw: RawData): Data {
+  const {
+    clients, brands, contacts, engagements, touchpoints, action_items: actionItems, notes, health_ratings: ratings,
+    invoices, payouts, upwork_earnings: earnings, upwork_charges: charges, fx_rates: fxRows, settings,
+  } = raw;
+  const thresholdsRow = settings.find((s) => s.key === "thresholds") as { value: Partial<Thresholds> } | undefined;
+  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
 
   return {
-    clients: clients.map((c) => ({ ...c, payment_terms_days: n(c.payment_terms_days), cadence_days: n(c.cadence_days) || 14 })),
+    clients: [...clients]
+      .sort(byName)
+      .map((c) => ({ ...c, payment_terms_days: n(c.payment_terms_days), cadence_days: n(c.cadence_days) || 14 })),
     brands,
     contacts,
     engagements: engagements.map((e) => ({

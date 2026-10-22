@@ -156,35 +156,59 @@ export default async function ClientPage({
       body: r.reason ? `"${r.reason}"` : null,
     });
   }
+  // One entry per invoice: on the paid date once paid, otherwise on the issue date.
   for (const i of invoices) {
-    const u = toUsd(d.fx, i.amount, i.currency, i.issued_on);
-    events.push({
-      date: i.issued_on,
-      order: `${i.issued_on}a`,
-      icon: "invoice",
-      title: `Invoice ${i.number} sent`,
-      body: `${usd(u)}${i.currency !== "USD" ? `, billed as ${money(i.amount, i.currency)}` : ""}. Due ${dayMonth(i.due_on)}.${i.status === "void" ? " Voided." : ""}`,
-    });
+    const billed = i.currency !== "USD" ? `, billed as ${money(i.amount, i.currency)}` : "";
     if (i.status === "paid" && i.paid_on) {
       events.push({
         date: i.paid_on,
         order: `${i.paid_on}b`,
         icon: "invoice",
         title: `Invoice ${i.number} paid`,
-        body: `${usd(toUsd(d.fx, i.amount, i.currency, i.paid_on))} after ${diffDays(i.issued_on, i.paid_on)} days${i.amount_received_inr ? `. ${inr(i.amount_received_inr)} landed.` : "."}`,
+        body: `${usd(toUsd(d.fx, i.amount, i.currency, i.paid_on))}${billed}. Sent ${dayMonth(i.issued_on)}, paid after ${diffDays(i.issued_on, i.paid_on)} days${i.amount_received_inr ? `. ${inr(i.amount_received_inr)} landed.` : "."}`,
+      });
+    } else {
+      events.push({
+        date: i.issued_on,
+        order: `${i.issued_on}a`,
+        icon: "invoice",
+        title: `Invoice ${i.number} ${i.status === "void" ? "voided" : "sent"}`,
+        body: `${usd(toUsd(d.fx, i.amount, i.currency, i.issued_on))}${billed}. Due ${dayMonth(i.due_on)}.`,
       });
     }
   }
+  // Upwork: weekly entries for this month and last, one summary per month before that.
+  const weeklyFrom = addMonths(monthStart(today), -1);
+  const monthly = new Map<string, { hours: number; net: number; count: number; last: string }>();
   for (const e of earnings) {
+    if (e.period_end >= weeklyFrom || e.kind !== "hourly") {
+      events.push({
+        date: e.period_end,
+        order: `${e.period_end}c`,
+        icon: "money",
+        title: e.kind === "hourly" ? "Upwork earnings" : e.kind === "milestone" ? "Upwork milestone" : "Upwork bonus",
+        body:
+          e.kind === "hourly"
+            ? `Week of ${dayMonth(e.period_start ?? e.period_end)}: ${e.hours !== null ? `${hours(Number(e.hours))} billed, ` : ""}${usd(e.net_usd, { cents: true })} net.${e.payout_id ? "" : " Not paid out yet."}`
+            : `${e.description ?? "Milestone"}: ${usd(e.net_usd, { cents: true })} net.${e.payout_id ? "" : " Not paid out yet."}`,
+      });
+    } else {
+      const key = monthKey(e.period_end);
+      const m = monthly.get(key) ?? { hours: 0, net: 0, count: 0, last: e.period_end };
+      m.hours += Number(e.hours ?? 0);
+      m.net += e.net_usd;
+      m.count += 1;
+      if (e.period_end > m.last) m.last = e.period_end;
+      monthly.set(key, m);
+    }
+  }
+  for (const [key, m] of monthly) {
     events.push({
-      date: e.period_end,
-      order: `${e.period_end}c`,
+      date: m.last,
+      order: `${m.last}c`,
       icon: "money",
-      title: e.kind === "hourly" ? "Upwork earnings" : e.kind === "milestone" ? "Upwork milestone" : "Upwork bonus",
-      body:
-        e.kind === "hourly"
-          ? `Week of ${dayMonth(e.period_start ?? e.period_end)}: ${e.hours !== null ? `${hours(Number(e.hours))} billed, ` : ""}${usd(e.net_usd, { cents: true })} net.${e.payout_id ? "" : " Not paid out yet."}`
-          : `${e.description ?? "Milestone"}: ${usd(e.net_usd, { cents: true })} net.${e.payout_id ? "" : " Not paid out yet."}`,
+      title: `Upwork earnings, ${monthYear(`${key}-01`)}`,
+      body: `${m.count} weeks: ${m.hours ? `${hours(m.hours)} billed, ` : ""}${usd(m.net, { cents: true })} net.`,
     });
   }
   events.sort((a, b) => (a.date === b.date ? (a.order < b.order ? 1 : -1) : a.date < b.date ? 1 : -1));
@@ -359,7 +383,10 @@ export default async function ClientPage({
             <section aria-labelledby="hours-title" className="card">
               <div className="stack gap-4">
                 <h2 id="hours-title" className="h2">Billed {unit === "h" ? "hours" : "amount"} by week</h2>
-                <p className="small muted">Last 12 weeks on Upwork. The bright bars are the 4 weeks the trend compares with the 8 before.</p>
+                <p className="small muted">
+                  Last 12 weeks on Upwork. The bright bars are the 4 weeks the trend compares with the 8 before
+                  {baseline ? `, which averaged ${unit === "h" ? hours(baseline) : usd(baseline)} a week (dashed line)` : ""}.
+                </p>
               </div>
               <WeeklyBars points={weekly} unit={unit} highlightFrom={Math.max(0, weekly.length - 4)} baseline={baseline} />
             </section>

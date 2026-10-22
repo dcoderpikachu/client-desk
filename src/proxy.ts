@@ -6,6 +6,7 @@ const PUBLIC_PATHS = ["/login", "/auth"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  if (process.env.CLIENT_DESK_FIXTURE) return response;
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
     cookies: {

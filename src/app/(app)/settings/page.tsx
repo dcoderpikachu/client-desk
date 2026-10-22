@@ -47,11 +47,11 @@ export default async function SettingsPage({
             <input className="input" name="payment_red_days" type="number" min={1} defaultValue={t.payment_red_days - 1} />
           </label>
           <label className="field">
-            <span>Upwork billing turns amber at a drop of, %</span>
+            <span>Upwork amber at a drop of, %</span>
             <input className="input" name="trend_amber_drop" type="number" min={1} max={100} defaultValue={Math.round(t.trend_amber_drop * 100)} />
           </label>
           <label className="field">
-            <span>Upwork billing turns red at a drop of, %</span>
+            <span>Upwork red at a drop of, %</span>
             <input className="input" name="trend_red_drop" type="number" min={1} max={100} defaultValue={Math.round(t.trend_red_drop * 100)} />
           </label>
           <label className="field">

@@ -82,12 +82,10 @@ export function WeeklyBars({
     <div role="img" aria-label={`Weekly billing over the last ${points.length} weeks, most recent ${last ? fmt(last.value) : "none"}.`} className="chart" style={{ height: H + 28 }}>
       <div className="chart-grid base" style={{ left: 0, top: H }} aria-hidden="true" />
       {baseline !== null && baseline > 0 && (
-        <>
-          <div aria-hidden="true" style={{ position: "absolute", left: 0, width: `${(highlightFrom / points.length) * 100}%`, top: H - y(baseline), borderTop: "2px dashed var(--bar-muted)" }} />
-          <span aria-hidden="true" className="xsmall muted" style={{ position: "absolute", left: 0, top: H - y(baseline) - 20 }}>
-            {fmt(baseline)} a week before
-          </span>
-        </>
+        <div
+          aria-hidden="true"
+          style={{ position: "absolute", left: 0, right: 0, top: H - y(baseline), borderTop: "2px dashed var(--ink-2)", zIndex: 1, opacity: 0.6 }}
+        />
       )}
       <div className="chart-bars" style={{ left: 0, height: H }}>
         {points.map((p, i) => (
