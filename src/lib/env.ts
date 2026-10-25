@@ -1,10 +1,11 @@
 // Public values: the publishable key is designed to ship to browsers, and every table is
-// protected by owner-only row level security. Env vars override these defaults.
-export const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://jupojqcseesuglwabomj.supabase.co";
+// protected by owner-only row level security. These deliberately ignore the generic
+// NEXT_PUBLIC_SUPABASE_* variables that Vercel's Supabase integration injects, so the app
+// always talks to the client-desk project that holds the schema. Override with
+// CLIENT_DESK_SUPABASE_URL and CLIENT_DESK_SUPABASE_KEY if the project ever moves.
+export const SUPABASE_URL = process.env.CLIENT_DESK_SUPABASE_URL ?? "https://jupojqcseesuglwabomj.supabase.co";
 
-export const SUPABASE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_wQ0kuF3-voHTbK0Ylck_Aw_vTezTimn";
+export const SUPABASE_KEY = process.env.CLIENT_DESK_SUPABASE_KEY ?? "sb_publishable_wQ0kuF3-voHTbK0Ylck_Aw_vTezTimn";
 
 // Only these addresses can request a login link (comma-separated in ALLOWED_EMAIL). The
 // database enforces the same rule independently through the public.owners table.
