@@ -8,7 +8,7 @@ export const SUPABASE_KEY =
 
 // Only these addresses can request a login link (comma-separated in ALLOWED_EMAIL). The
 // database enforces the same rule independently through the public.owners table.
-export const ALLOWED_EMAILS = (process.env.ALLOWED_EMAIL ?? "kshitij.message@gmail.com")
+export const ALLOWED_EMAILS = (process.env.ALLOWED_EMAIL ?? "dcoderkshitij@gmail.com")
   .split(",")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
