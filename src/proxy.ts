@@ -5,6 +5,14 @@ import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
 const PUBLIC_PATHS = ["/login", "/auth"];
 
 export async function proxy(request: NextRequest) {
+  // If Supabase falls back to the Site URL, the sign-in code lands on "/" instead of the
+  // callback. Send it where it belongs.
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
   if (process.env.CLIENT_DESK_FIXTURE) return response;
 
