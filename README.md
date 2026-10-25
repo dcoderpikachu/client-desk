@@ -4,7 +4,7 @@ Internal client management for Script Commerce: client health, call cadence, act
 direct (Wise) invoices, Upwork earnings and payouts, and agency revenue. Single user.
 
 - Next.js 16 (App Router) on Vercel, region `bom1` (Mumbai)
-- Supabase Postgres + Auth (magic link) in `ap-south-1`
+- Supabase Postgres + Auth (Google sign-in) in `ap-south-1`
 - All money shown in US dollars, with the rupee equivalent beneath
 
 ## How the numbers work
@@ -34,3 +34,12 @@ npm run dev
 
 The Supabase URL and publishable key have safe public defaults in `src/lib/env.ts`; override with
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. `ALLOWED_EMAIL` sets who can sign in (comma-separated for more than one); add the same address to `public.owners`.
+
+## Google sign-in setup
+
+1. Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth client ID → Web application.
+   Authorized redirect URI: `https://jupojqcseesuglwabomj.supabase.co/auth/v1/callback`.
+2. Supabase → Authentication → Sign In / Providers → Google: enable, paste the client ID and secret.
+3. Supabase → Authentication → URL Configuration: Site URL = the Vercel URL; add `https://<vercel-url>/**` to Redirect URLs.
+
+Only emails in `ALLOWED_EMAIL` (and `public.owners`) get in; anyone else is signed straight back out.

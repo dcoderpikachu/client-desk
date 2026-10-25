@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { isAllowed } from "@/lib/env";
+import { ALLOWED_EMAILS, SUPABASE_KEY, SUPABASE_URL, isAllowed } from "@/lib/env";
 import { addDays, todayISO } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -54,10 +54,20 @@ function fail(path: string, message: string): never {
 // Auth
 // ---------------------------------------------------------------------------
 
-export async function signIn(fd: FormData) {
-  const email = str(fd, "email").toLowerCase();
-  if (!email) redirect("/login?error=" + encodeURIComponent("Enter your email."));
-  if (!isAllowed(email)) redirect("/login?error=" + encodeURIComponent("This desk is private. That email can't sign in."));
+const loginError = (message: string): never => redirect("/login?error=" + encodeURIComponent(message));
+
+export async function signInWithGoogle() {
+  // Supabase only builds the Google redirect URL; if the provider is off, Google never
+  // gets involved and the user lands on a raw error page. Check first.
+  let googleOn = true;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: SUPABASE_KEY }, cache: "no-store" });
+    const settings = (await res.json()) as { external?: { google?: boolean } };
+    googleOn = Boolean(settings.external?.google);
+  } catch {
+    // If the check itself fails, carry on and let Supabase report any problem.
+  }
+  if (!googleOn) loginError("Google sign-in isn't switched on in Supabase yet.");
 
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
@@ -65,12 +75,15 @@ export async function signIn(fd: FormData) {
   const origin = h.get("origin") ?? `${proto}://${host}`;
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${origin}/auth/callback`, shouldCreateUser: true },
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+      queryParams: { prompt: "select_account", login_hint: ALLOWED_EMAILS[0] },
+    },
   });
-  if (error) redirect("/login?error=" + encodeURIComponent(error.message));
-  redirect("/login?sent=1");
+  if (error || !data.url) loginError(error?.message ?? "Couldn't start Google sign-in.");
+  redirect(data.url as string);
 }
 
 export async function signOut() {
